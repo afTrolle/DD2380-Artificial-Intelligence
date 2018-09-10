@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Common/Common.iml" filepath="$PROJECT_DIR$/Common/Common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/DD2380-Artificial-Intelligence.iml" filepath="$PROJECT_DIR$/DD2380-Artificial-Intelligence.iml" />
+      <module fileurl="file://$PROJECT_DIR$/HMM0/HMM0.iml" filepath="$PROJECT_DIR$/HMM0/HMM0.iml" />
+      <module fileurl="file://$PROJECT_DIR$/HMM1/HMM1.iml" filepath="$PROJECT_DIR$/HMM1/HMM1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/HMM2/HMM2.iml" filepath="$PROJECT_DIR$/HMM2/HMM2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/HMM3/HMM3.iml" filepath="$PROJECT_DIR$/HMM3/HMM3.iml" />
+    </modules>
+  </component>
+</project>
