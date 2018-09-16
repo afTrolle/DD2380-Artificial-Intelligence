@@ -1,5 +1,3 @@
-package com.afTrolle.hmm1;
-
 import com.afTrolle.common.HMM;
 import com.afTrolle.common.Matrix;
 import com.afTrolle.common.Parser;
@@ -10,10 +8,8 @@ import java.io.IOException;
 public class Start {
 
     public static void main(String[] args) {
-
-
         try {
-            Parser parser = new Parser(null);
+            Parser parser = new Parser("HMM3/res/input.in");
 
             Matrix<Double> aMatrix = parser.parseMatrix();
             Matrix<Double> bMatrix = parser.parseMatrix();
@@ -21,10 +17,14 @@ public class Start {
 
             HMM hmm = new HMM(aMatrix, bMatrix, piMatrix);
 
-
-            int[] stateTransitions = parser.parseArray();
-            double res = hmm.forward(stateTransitions);
-            System.out.println(res);
+            //observation sequence
+            int[] emissionSequence = parser.parseArray();
+         // double res = hmm.forward(emissionSequence);
+            double res = 0;
+            System.out.println("forward done:");
+            double res2 = hmm.backward(emissionSequence);
+            System.out.println("backward: "+res2);
+            System.out.println("forward: "+res);
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();

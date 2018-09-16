@@ -1,6 +1,5 @@
 package com.afTrolle.common;
 
-
 public class HMM {
 
 
@@ -13,9 +12,9 @@ public class HMM {
     //initial-state matrix, initial state distribution, probability of starting in a specific state.
     Matrix<Double> piMatrix;
 
-    //number of States
+    //N ,number of States
     final int numStates;
-    //number of Observations that can be made
+    //M ,number of Observation symbols that can be seen.
     final int numObservations;
 
     //distinct states of the Markov process
@@ -43,15 +42,6 @@ public class HMM {
         }
     }
 
-    private Double getFromAToA(int fromState, int toState){
-       return aMatrix.get(fromState,toState);
-    }
-
-    private Double getInStateChanceToObserv(int state,int observation){
-        return bMatrix.get(state,observation);
-    }
-
-
     public void printHMM() {
         aMatrix.printMatrix("from state/to state , A-matrix");
         bMatrix.printMatrix("state/observation , B-matrix");
@@ -59,170 +49,179 @@ public class HMM {
     }
 
 
-    // multiples aMatrix each col with init array.
-    // think it gives avg time spent in each state.
-    public Double[] getLikleyFirstObservation() {
-        int colLen = piMatrix.getColLength();
-        Double[] res = new Double[colLen];
-        //Can only be one row
-        Double[] piZeroRow = piMatrix.getRow(0);
-        for (int i = 0; i < colLen; i++) {
-            Double[] bCol = aMatrix.getColumn(i);
-            res[i] = MatrixHelper.elemmentWiseProductSum(piZeroRow, bCol);
+    private int[] savedPath;
+    private double highScore = 0;
+
+
+    public double backward(int[] observations) {
+        Double[] row = piMatrix.getRow(0);
+        int observationIndex = 0;
+        savedPath = new int[observations.length];
+        int[] path = new int[observations.length];
+        double sum = 0;
+        for (int i = 0; i < numStates; i++) {
+            path[observationIndex] = i;
+            Double[] bColumn = bMatrix.getColumn(observations[observationIndex]);
+            path[observationIndex] = i;
+            backwardRec(row[i] * bColumn[i], observations, observationIndex + 1, path);
         }
+
+
+        for (int i : savedPath) {
+            System.out.print(i + " ");
+        }
+
+        return sum;
+    }
+
+
+    private void backwardRec(Double aDouble, int[] observations, int observationIndex, int[] path) {
+        if (observationIndex == observations.length) {
+            //stop recursion
+            if (aDouble > highScore) {
+                highScore = aDouble;
+                for (int i = 0; i < path.length; i++) {
+                    savedPath[i] = path[i];
+                }
+            }
+            return;
+        }
+
+        //this could be moved to for loop and use index only.
+        final int observation = observations[observationIndex];
+        final int prevState = path[observationIndex - 1];
+        for (int i = 0; i < numStates; i++) {
+            double score = aDouble * bMatrix.get(i, observation) * aMatrix.get(prevState, i);
+            //ignore next paths if score is zero
+            if (score == 0) {
+                continue;
+            }
+            path[observationIndex] = i;
+            backwardRec(score, observations, observationIndex + 1, path);
+        }
+    }
+
+
+    public double forward(int[] observations) {
+        Double[] row = piMatrix.getRow(0);
+        int observationIndex = 0;
+        int[] path = new int[observations.length];
+        double sum = 0;
+        for (int i = 0; i < numStates; i++) {
+            path[observationIndex] = i;
+            Double[] bColumn = bMatrix.getColumn(observations[observationIndex]);
+            path[observationIndex] = i;
+            sum = sum + forwardRec(row[i] * bColumn[i], observations, observationIndex + 1, path);
+        }
+
+        return sum;
+    }
+
+
+    private double forwardRec(Double aDouble, int[] observations, int observationIndex, int[] path) {
+        if (observationIndex == observations.length) {
+            //stop recursion
+            return aDouble;
+        }
+
+        //this could be moved to for loop and use index only.
+        final int observation = observations[observationIndex];
+        final int prevState = path[observationIndex - 1];
+        double sum = 0;
+        for (int i = 0; i < numStates; i++) {
+            double score = aDouble * bMatrix.get(i, observation) * aMatrix.get(prevState, i);
+            //ignore next paths if score is zero
+            if (score == 0) {
+                continue;
+            }
+            path[observationIndex] = i;
+            sum = sum + forwardRec(score, observations, observationIndex + 1, path);
+        }
+
+        return sum;
+    }
+
+    public Double[] getFirstObservationProbability() {
+
+        // int, reverse?
+        Double[] initProbabilityRow = piMatrix.getRow(0);
+        Double rest[] = new Double[numStates];
+        for (int i = 0; i < numStates; i++) {
+            rest[i] = MatrixHelper.elemmentWiseProductSum(initProbabilityRow,aMatrix.getColumn(i));
+        }
+
+        // observations
+        Double[] res = new Double[numObservations];
+        for (int i = 0; i < numObservations; i++) {
+            Double[] column = bMatrix.getColumn(i);
+            res[i] = MatrixHelper.elemmentWiseProductSum(rest, column);
+        }
+
         return res;
     }
 
 
-    public Double[] getObservationEmission() {
-        Double[] likleyFirstObservation = getLikleyFirstObservation();
-        int bColLen = bMatrix.getColLength();
-        Double[] ret = new Double[bColLen];
-        for (int i = 0; i < bColLen; i++) {
-            Double[] col = bMatrix.getColumn(i);
-            Double sum = 0D;
-            for (int j = 0; j < col.length; j++) {
-                sum += likleyFirstObservation[j] * col[j];
-            }
-            ret[i] = sum;
+
+
+
+    public int[] backwardOpt(int[] observations) {
+        Double[] row = piMatrix.getRow(0);
+        int observationIndex = 0;
+
+        savedPath = new int[observations.length];
+
+        int[][] path = new int[numStates][observations.length];
+        double[] scores = new double[numStates];
+
+        //temporary score each road
+        double[][] buffer = new double[numStates][numStates];
+
+        //parse first observation
+        for (int i = 0; i < numStates; i++) {
+            path[i][0] = i;
+            Double[] bColumn = bMatrix.getColumn(observations[0]);
+            scores[i] = row[i] * bColumn[i];
         }
 
-        return ret;
-    }
+        //recursion steps
+        for (int i = 1; i < observations.length; i++) {
+            //depth of observations
 
+            final int observation = observations[i];
+            final Double[] bColumn = bMatrix.getColumn(observation);
 
-    public double getLikelihoodOfObservationSeq(int[] stateTransitions) {
-        //index of observation
-        int index = 0;
-        Double[] doubles = bColWithElementWiseProductWithArray(stateTransitions[index], getPiArray());
-        System.out.println(MatrixHelper.indexOfMax(doubles));
+            for (int j = 0; j < numStates; j++) {
 
-        for (index = 1; index < stateTransitions.length; index++) {
-
-            Double[] probArray = new Double[doubles.length];
-
-            for (int i = 0; i < doubles.length; i++) {
-                Double[] column = aMatrix.getColumn(i);
-                Double prob = MatrixHelper.elemmentWiseProductSum(doubles, column);
-                probArray[i] = prob;
-            }
-
-            doubles = bColWithElementWiseProductWithArray(stateTransitions[index], probArray);
-
-            System.out.println(MatrixHelper.indexOfMax(doubles));
-        }
-
-        return MatrixHelper.sumElements(doubles);
-    }
-
-
-    public int[][] getMostLikeleyStatesChangesOfObservationSeq(int[] stateTransitions) {
-        //index of observation
-        int[] res = new int[stateTransitions.length];
-        int index = 0;
-        Double[] doubles = bColWithElementWiseProductWithArray(stateTransitions[index], getPiArray());
-        res[index] = MatrixHelper.indexOfMax(doubles);
-
-        Double[][] probMatrix = new Double[stateTransitions.length][];
-        int[][] probStateMatrix = new int[stateTransitions.length - 1][];
-
-        probMatrix[0] = doubles;
-
-        for (index = 1; index < stateTransitions.length; index++) {
-
-            //list of max probability
-            Double[] probArray = new Double[aMatrix.getColLength()];
-            int[] probStateArray = new int[aMatrix.getColLength()];
-
-            for (int i = 0; i < aMatrix.getColLength(); i++) {
-
-                Double[] tempProbArray = calcRow(doubles, aMatrix.getColumn(i), bMatrix.get(i, stateTransitions[index]));
-                int argMaxState = MatrixHelper.indexOfMax(tempProbArray);
-                if (argMaxState == -1) {
-                    probArray[i] = 0D;
-                } else {
-                    probArray[i] = tempProbArray[argMaxState];
+                for (int k = 0; k < numStates; k++) {
+                    //explore options
+                    double score = scores[j] * bMatrix.get(k, observation) * aMatrix.get(path[j][i-1], k);
+                    buffer[j][k] = score;
                 }
-                probStateArray[i] = argMaxState;
 
+
+                //this is bad ignore buffer,
+                //do instead count best path to state
+                for (int k = 0; k < numStates; k++) {
+
+                    int winner = 0;
+                    double bestScore = 0;
+
+                    for (int l = 0; l < numStates; l++) {
+                 //       buffer[]
+                    }
+                }
+                //pick winners
+               // path[j][i] =
             }
-            doubles = probArray;
-            probMatrix[index] = probArray;
-            probStateMatrix[index - 1] = probStateArray;
-
-            // TODO save probArray and prob state
+            path[i][observationIndex] = i;
+           // Double[] bColumn = bMatrix.getColumn(observations[observationIndex]);
         }
 
-
-        for (int i = 1; i < probMatrix.length; i++) {
-            int indexOfMax = MatrixHelper.indexOfMaxNoneNull(probMatrix[i]);
-            //   System.out.print(indexOfMax+" ");
-            System.out.print(probStateMatrix[i - 1][indexOfMax] + " ");
-
-        }
-        int indexOfMax = MatrixHelper.indexOfMaxNoneNull(probMatrix[probMatrix.length - 1]);
-        System.out.print(indexOfMax + " ");
-        return probStateMatrix;
-    }
-
-    private Double[] calcRow(Double[] maxProbability, Double[] aCol, Double bObservation) {
-        Double[] tempProb = new Double[maxProbability.length];
-        for (int i = 0; i < maxProbability.length; i++) {
-            tempProb[i] = maxProbability[i] * aCol[i] * bObservation;
-        }
-        return tempProb;
+        //return optimal path
+        return path[0];
     }
 
 
-    private Double[] bColWithElementWiseProductWithArray(int bColIndex, Double[] probability) {
-        Double[] column = bMatrix.getColumn(bColIndex);
-        return MatrixHelper.elementWiseProduct(probability, column);
-    }
 
-    //gets Pi initial  state probability as array
-    private Double[] getPiArray() {
-        return piMatrix.getRow(0);
-    }
-
-    public int getAColIndex() {
-        double max = MatrixHelper.sumElements(aMatrix.getColumn(0));
-        int index = 0;
-        for (int i = 1; i < aMatrix.getColLength(); i++) {
-            double column = MatrixHelper.sumElements(aMatrix.getColumn(i));
-            if (max < column) {
-                max = column;
-                index = i;
-            }
-        }
-        return index;
-    }
-
-    public int aMatrixFromTo(int lastIndex) {
-        return MatrixHelper.indexOfMax(aMatrix.getColumn(lastIndex));
-    }
-
-
-    public int[] getViterbi(int[] emissionSequence) {
-        //calculate most likley   z* = argmax p(z|x) , x = emissionSequence
-
-        //rk: if f(a) >= 0 va and g(a,b) >= 0 then
-        //
-        // max f(a)g(a,b) = max{f(a) Max g(a,b)}
-
-
-        return new int[0];
-    }
-
-    // alpha pass
-    public int[] forward(int[] stateSeq) {
-
-        return null;
-    }
-    // beta pass
-    public int[] backward(int[] EmssionSeq) {
-    return null;
-    }
-
-    // dp dynamic programming
 
 }

@@ -12,16 +12,15 @@ public class Start {
     public static void main(String[] args) {
 
         try {
-            Parser parser = new Parser(null);
+            Parser parser = new Parser("HMM0/res/input.in");
             Matrix<Double> aMatrix = parser.parseMatrix();
             Matrix<Double> bMatrix = parser.parseMatrix();
             Matrix<Double> piMatrix = parser.parseMatrix();
             HMM hmm = new HMM(aMatrix,bMatrix,piMatrix);
 
-            Double[] observationEmission = hmm.getObservationEmission();
+            Double[] observationEmission = hmm.getFirstObservationProbability();
 
             Printer.printArray(observationEmission);
-
         } catch (IOException e) {
             e.printStackTrace();
         }
