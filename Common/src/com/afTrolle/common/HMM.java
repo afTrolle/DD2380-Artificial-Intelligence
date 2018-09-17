@@ -162,8 +162,6 @@ public class HMM {
 
 
 
-
-
     public int[] backwardOpt(int[] observations) {
         Double[] row = piMatrix.getRow(0);
         int observationIndex = 0;
@@ -223,16 +221,15 @@ public class HMM {
 
 
     public double forwardOpt(int[] emissionSequence) {
-
         Double[] piRow = piMatrix.getRow(0);
+        //res
         Double[] res = MatrixHelper.elementWiseProduct(piRow,bMatrix.getColumn(emissionSequence[0]));
         Double[] temp = new Double[numStates];
-        for (int i = 1; i < numObservations; i++) {
+        for (int i = 1; i < emissionSequence.length; i++) {
             Double[] obsRow = bMatrix.getColumn(emissionSequence[i]);
-
             for (int j = 0; j < numStates; j++) {
-                Double[] column = aMatrix.getColumn(j);
-                temp[j] = MatrixHelper.elemmentWiseProductSum(column, res);
+                Double[] col = aMatrix.getColumn(j);
+                temp[j] = MatrixHelper.elemmentWiseProductSum(col, res);
             }
             res = MatrixHelper.elementWiseProduct(obsRow,temp);
         }
