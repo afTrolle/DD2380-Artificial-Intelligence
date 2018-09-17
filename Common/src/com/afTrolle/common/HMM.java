@@ -222,6 +222,20 @@ public class HMM {
     }
 
 
+    public double forwardOpt(int[] emissionSequence) {
 
+        Double[] piRow = piMatrix.getRow(0);
+        Double[] res = MatrixHelper.elementWiseProduct(piRow,bMatrix.getColumn(emissionSequence[0]));
+        Double[] temp = new Double[numStates];
+        for (int i = 1; i < numObservations; i++) {
+            Double[] obsRow = bMatrix.getColumn(emissionSequence[i]);
 
+            for (int j = 0; j < numStates; j++) {
+                Double[] column = aMatrix.getColumn(j);
+                temp[j] = MatrixHelper.elemmentWiseProductSum(column, res);
+            }
+            res = MatrixHelper.elementWiseProduct(obsRow,temp);
+        }
+        return MatrixHelper.sumElements(res);
+    }
 }

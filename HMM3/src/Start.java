@@ -8,6 +8,21 @@ import java.io.IOException;
 public class Start {
 
     public static void main(String[] args) {
+
+
+        /*
+   In this task show estimate the model parameters for an HMM.
+   Given initial transition matrix, emission matrix and initial state probability distribution and a sequence of emissions
+
+   Assignment Train the HMM to maximize the probability of observing the given sequence of emissions
+
+
+Output
+You should output the estimated transition matrix and emission matrix on one line
+each in the same matrix format as they were given, including the dimensions.
+Do not output the estimated initial state probability distribution.
+         */
+
         try {
             Parser parser = new Parser("HMM3/res/input.in");
 
@@ -19,13 +34,18 @@ public class Start {
 
             //observation sequence
             int[] emissionSequence = parser.parseArray();
-         // double res = hmm.forward(emissionSequence);
-            double res = 0;
-            System.out.println("forward done:");
-            double res2 = hmm.backward(emissionSequence);
-            System.out.println("backward: "+res2);
-            System.out.println("forward: "+res);
+           double res = hmm.forwardOpt(emissionSequence);
+     //    double res = hmm.forward(emissionSequence);
+           // double res = 0;
+     //       System.out.println("forward done: "+ res);
+      //      hmm.backwardOpt(emissionSequence);
+            //double res2 = hmm.backward(emissionSequence);
+       //     System.out.println("backward: "+res2);
+      //      System.out.println("forward: "+res);
 
+
+            aMatrix.printOutput();
+            bMatrix.printOutput();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
