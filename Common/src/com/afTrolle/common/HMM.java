@@ -220,6 +220,56 @@ public class HMM {
     }
 
 
+<<<<<<< Updated upstream
+    public double forwardOpt(int[] emissionSequence) {
+        Double[] piRow = piMatrix.getRow(0);
+        //res
+        Double[] res = MatrixHelper.elementWiseProduct(piRow,bMatrix.getColumn(emissionSequence[0]));
+        Double[] temp = new Double[numStates];
+        for (int i = 1; i < emissionSequence.length; i++) {
+            Double[] obsRow = bMatrix.getColumn(emissionSequence[i]);
+            for (int j = 0; j < numStates; j++) {
+                Double[] col = aMatrix.getColumn(j);
+                temp[j] = MatrixHelper.elemmentWiseProductSum(col, res);
+=======
+<<<<<<< HEAD
+    public Double[][] hmmZero() throws Exception {
+        Double[][] doubles = matrixMultiplication(piMatrix.getMatrix(), aMatrix.getMatrix());
+        return  matrixMultiplication(doubles,bMatrix.getMatrix());
+    }
+
+    // This is A*B = AB
+    //order is important!
+    public Double[][] matrixMultiplication(Double[][] a, Double[][] b) throws Exception {
+        //assuming symetric matrics
+        int aRows = a.length;
+        int aCols = a[0].length;
+        int bRows = b.length;
+        int bCols = b[0].length;
+
+        if (aCols != bRows){
+            throw new  Exception("Error invalid matrix");
+        }
+
+        Double[][] res  = new Double[aRows][bCols];
+
+        for (int i = 0; i < aRows; i++) {
+            for (int j = 0; j < bCols; j++) {
+                Double tempRes = 0D;
+                for (int k = 0; k < aCols; k++) {
+                    tempRes +=  a[i][k] * b[k][j];
+                }
+                res[i][j] = tempRes;
+>>>>>>> Stashed changes
+            }
+            res = MatrixHelper.elementWiseProduct(obsRow,temp);
+        }
+<<<<<<< Updated upstream
+        return MatrixHelper.sumElements(res);
+=======
+
+        return res;
+=======
     public double forwardOpt(int[] emissionSequence) {
         Double[] piRow = piMatrix.getRow(0);
         //res
@@ -234,5 +284,7 @@ public class HMM {
             res = MatrixHelper.elementWiseProduct(obsRow,temp);
         }
         return MatrixHelper.sumElements(res);
+>>>>>>> 6e550f4841a51f051c97cc66a40a99178dd8023c
+>>>>>>> Stashed changes
     }
 }
