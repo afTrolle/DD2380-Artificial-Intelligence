@@ -58,9 +58,6 @@ public class MatrixHelper {
         return arr[i];
     }
 
-    public static Double[] sumWise(Double[] probability, Double[] observationTransformRow) {
-        return new Double[0];
-    }
 
 
 }

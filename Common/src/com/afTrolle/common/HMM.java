@@ -147,7 +147,7 @@ public class HMM {
         Double[] initProbabilityRow = piMatrix.getRow(0);
         Double rest[] = new Double[numStates];
         for (int i = 0; i < numStates; i++) {
-            rest[i] = MatrixHelper.elemmentWiseProductSum(initProbabilityRow,aMatrix.getColumn(i));
+            rest[i] = MatrixHelper.elemmentWiseProductSum(initProbabilityRow, aMatrix.getColumn(i));
         }
 
         // observations
@@ -159,7 +159,6 @@ public class HMM {
 
         return res;
     }
-
 
 
     public int[] backwardOpt(int[] observations) {
@@ -192,7 +191,7 @@ public class HMM {
 
                 for (int k = 0; k < numStates; k++) {
                     //explore options
-                    double score = scores[j] * bMatrix.get(k, observation) * aMatrix.get(path[j][i-1], k);
+                    double score = scores[j] * bMatrix.get(k, observation) * aMatrix.get(path[j][i - 1], k);
                     buffer[j][k] = score;
                 }
 
@@ -205,14 +204,14 @@ public class HMM {
                     double bestScore = 0;
 
                     for (int l = 0; l < numStates; l++) {
-                 //       buffer[]
+                        //       buffer[]
                     }
                 }
                 //pick winners
-               // path[j][i] =
+                // path[j][i] =
             }
             path[i][observationIndex] = i;
-           // Double[] bColumn = bMatrix.getColumn(observations[observationIndex]);
+            // Double[] bColumn = bMatrix.getColumn(observations[observationIndex]);
         }
 
         //return optimal path
@@ -220,60 +219,43 @@ public class HMM {
     }
 
 
-<<<<<<< Updated upstream
-    public double forwardOpt(int[] emissionSequence) {
-        Double[] piRow = piMatrix.getRow(0);
-        //res
-        Double[] res = MatrixHelper.elementWiseProduct(piRow,bMatrix.getColumn(emissionSequence[0]));
-        Double[] temp = new Double[numStates];
-        for (int i = 1; i < emissionSequence.length; i++) {
-            Double[] obsRow = bMatrix.getColumn(emissionSequence[i]);
-            for (int j = 0; j < numStates; j++) {
-                Double[] col = aMatrix.getColumn(j);
-                temp[j] = MatrixHelper.elemmentWiseProductSum(col, res);
-=======
-<<<<<<< HEAD
     public Double[][] hmmZero() throws Exception {
         Double[][] doubles = matrixMultiplication(piMatrix.getMatrix(), aMatrix.getMatrix());
-        return  matrixMultiplication(doubles,bMatrix.getMatrix());
+        return matrixMultiplication(doubles, bMatrix.getMatrix());
     }
 
     // This is A*B = AB
     //order is important!
-    public Double[][] matrixMultiplication(Double[][] a, Double[][] b) throws Exception {
+    public Double[][] matrixMultiplication(Double[][] a, Double[][] b) {
         //assuming symetric matrics
         int aRows = a.length;
         int aCols = a[0].length;
         int bRows = b.length;
         int bCols = b[0].length;
 
-        if (aCols != bRows){
-            throw new  Exception("Error invalid matrix");
+        if (aCols != bRows) {
+            throw new ArithmeticException("Error invalid matrix size");
         }
 
-        Double[][] res  = new Double[aRows][bCols];
+        Double[][] res = new Double[aRows][bCols];
 
         for (int i = 0; i < aRows; i++) {
             for (int j = 0; j < bCols; j++) {
                 Double tempRes = 0D;
                 for (int k = 0; k < aCols; k++) {
-                    tempRes +=  a[i][k] * b[k][j];
+                    tempRes += a[i][k] * b[k][j];
                 }
                 res[i][j] = tempRes;
->>>>>>> Stashed changes
             }
-            res = MatrixHelper.elementWiseProduct(obsRow,temp);
         }
-<<<<<<< Updated upstream
-        return MatrixHelper.sumElements(res);
-=======
-
         return res;
-=======
+    }
+
+
     public double forwardOpt(int[] emissionSequence) {
         Double[] piRow = piMatrix.getRow(0);
         //res
-        Double[] res = MatrixHelper.elementWiseProduct(piRow,bMatrix.getColumn(emissionSequence[0]));
+        Double[] res = MatrixHelper.elementWiseProduct(piRow, bMatrix.getColumn(emissionSequence[0]));
         Double[] temp = new Double[numStates];
         for (int i = 1; i < emissionSequence.length; i++) {
             Double[] obsRow = bMatrix.getColumn(emissionSequence[i]);
@@ -281,10 +263,85 @@ public class HMM {
                 Double[] col = aMatrix.getColumn(j);
                 temp[j] = MatrixHelper.elemmentWiseProductSum(col, res);
             }
-            res = MatrixHelper.elementWiseProduct(obsRow,temp);
+            res = MatrixHelper.elementWiseProduct(obsRow, temp);
         }
         return MatrixHelper.sumElements(res);
->>>>>>> 6e550f4841a51f051c97cc66a40a99178dd8023c
->>>>>>> Stashed changes
+    }
+
+
+    //i
+    public Double alphaOne(int state, int observation) {
+        Double[][] pi = piMatrix.getMatrix();
+        Double[][] b = bMatrix.getMatrix();
+        Double piProb = pi[0][state];
+        Double obsProbability = b[state][observation];
+
+        return obsProbability * piProb;
+    }
+
+    public Double alphaRecursive(int state, int[] observations, int t) {
+        if (t == 1) {
+            return alphaOne(state, observations[t - 1]);
+        } else {
+            Double[][] b = bMatrix.getMatrix();
+            Double obsProbability = b[state][observations[t - 1]];
+            Double sum = 0D;
+
+            for (int j = 0; j < numStates; j++) {
+                sum += aMatrix.get(j, state) * alphaRecursive(j, observations, t - 1);
+            }
+
+            return obsProbability * sum;
+        }
+    }
+
+
+    public Double[][] alphaOneMargnilize(int observation) {
+        Double[][] pi = piMatrix.getMatrix();
+        Double[][] b = bMatrix.getMatrix();
+        return matrixMultiplication(pi, b);
+    }
+
+    public void alphaRecursiveMargnilize(int[] observations) {
+        int t = observations.length;
+
+        Double[][] ans = alphaOneMargnilize(observations[0]);
+
+        for (int i = 1; i < t; i++) {
+
+        }
+    }
+
+    public double hmm1(int[] observations) {
+        double ans = 0;
+        for (int i = 0; i < numStates; i++) {
+            ans += alphaRecursive(i, observations, observations.length);
+        }
+        return ans;
+    }
+
+
+    public int[] viterbi(int state, int[] observations, int t) {
+        int[] road = new int[observations.length];
+
+        if (t == 1){
+            return viterbiOne(state,observations[0]);
+        }
+
+        for (int j = 0; j < numStates; j++) {
+
+            Double aDouble = aMatrix.get(j, state);
+            Double aDouble1 = bMatrix.get(state, observations[t - 1]);
+            Double aDouble2 = viterbi(j, observations, t - 1);
+
+        }
+
+        return road;
+    }
+
+    public double viterbiOne(int state, int obeservation) {
+        Double bprob = bMatrix.get(state, obeservation);
+        Double piProb = piMatrix.get(0, state);
+        return bprob * piProb;
     }
 }

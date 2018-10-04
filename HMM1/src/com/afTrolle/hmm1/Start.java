@@ -13,7 +13,7 @@ public class Start {
 
 
         try {
-            Parser parser = new Parser(null);
+            Parser parser = new Parser("HMM1/res/input.in");
 
             Matrix<Double> aMatrix = parser.parseMatrix();
             Matrix<Double> bMatrix = parser.parseMatrix();
@@ -23,8 +23,16 @@ public class Start {
 
 
             int[] stateTransitions = parser.parseArray();
-            double res = hmm.forward(stateTransitions);
-            System.out.println(res);
+            long l = System.currentTimeMillis();
+            for (int i = 0; i < 1000; i++) {
+                double res = hmm.forward(stateTransitions);
+            }
+            System.out.println("old time: " + (System.currentTimeMillis()-l ));
+            l = System.currentTimeMillis();
+            for (int i = 0; i < 1000; i++) {
+                double res = hmm.hmm1(stateTransitions);
+            }
+            System.out.println("hmm1 new time: " + ( System.currentTimeMillis()-l));
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
