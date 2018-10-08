@@ -8,7 +8,7 @@ public class Start {
 
     public static void main(String[] args) throws IOException {
 
-        Parser parser = new Parser("HMM/res/input.in");
+        Parser parser = new Parser("HMM2/res/input.in");
 
         Matrix<Double> aMatrix = parser.parseMatrix();
         Matrix<Double> bMatrix = parser.parseMatrix();
@@ -17,9 +17,16 @@ public class Start {
         HMM hmm = new HMM(aMatrix, bMatrix, piMatrix);
 
         //Observations seen in sequence
-        int[]  emissionSequence = parser.parseArray();
+        int[] emissionSequence = parser.parseArray();
 
-        double res = hmm.backward(emissionSequence);
-        System.out.println(res);
+        //double res = hmm.backward(emissionSequence);
+        int[] res = hmm.viterbiMagnialized(emissionSequence);
+
+        for (int re : res) {
+            System.out.print(re + " ");
+        }
+
+
+        //  System.out.println(res);
     }
 }

@@ -52,7 +52,7 @@ public class HMM {
     private int[] savedPath;
     private double highScore = 0;
 
-
+    //delta
     public double backward(int[] observations) {
         Double[] row = piMatrix.getRow(0);
         int observationIndex = 0;
@@ -62,10 +62,8 @@ public class HMM {
         for (int i = 0; i < numStates; i++) {
             path[observationIndex] = i;
             Double[] bColumn = bMatrix.getColumn(observations[observationIndex]);
-            path[observationIndex] = i;
             backwardRec(row[i] * bColumn[i], observations, observationIndex + 1, path);
         }
-
 
         for (int i : savedPath) {
             System.out.print(i + " ");
@@ -321,27 +319,78 @@ public class HMM {
     }
 
 
-    public int[] viterbi(int state, int[] observations, int t) {
-        int[] road = new int[observations.length];
-
-        if (t == 1){
-            return viterbiOne(state,observations[0]);
-        }
+    public double viterbi(int state, int[] observations, int t) {
+        double max = 0;
+        int argMax = -1;
 
         for (int j = 0; j < numStates; j++) {
+            double deltaPrev;
+            double ans;
+            if (t == 0) {
+                ans = viterbiOne(j, observations[0]);
+            } else {
+                deltaPrev = viterbi(j, observations, t - 1);
+                Double a = aMatrix.get(j, state);
+                Double b = bMatrix.get(state, observations[t]);
+                ans = deltaPrev * a * b;
+            }
 
-            Double aDouble = aMatrix.get(j, state);
-            Double aDouble1 = bMatrix.get(state, observations[t - 1]);
-            Double aDouble2 = viterbi(j, observations, t - 1);
-
+            if (ans > max) {
+                max = ans;
+                argMax = j;
+            }
         }
 
-        return road;
+        return max;
     }
 
     public double viterbiOne(int state, int obeservation) {
         Double bprob = bMatrix.get(state, obeservation);
         Double piProb = piMatrix.get(0, state);
         return bprob * piProb;
+    }
+
+    /**/
+    public int[] viterbiMagnialized(int[] emissionSequence) {
+
+        int[][] argMaxStore = new int[emissionSequence.length][numStates];
+        double[][] maxStore = new double[emissionSequence.length][numStates];
+
+        for (int i = 0; i < emissionSequence.length; i++) {
+            double max = 0;
+            int argMax = -1;
+            for (int j = 0; j < numStates; j++) {
+                double ans = viterbi(j, emissionSequence, i);
+                if (ans > max) {
+                    max = ans;
+                    argMax = j;
+                }
+                argMaxStore[i][j] = j;
+                maxStore[i][j] = ans;
+            }
+        }
+
+        //backtracking
+        double[] lastProbs = maxStore[emissionSequence.length-1];
+        Double highest = lastProbs[0] ;
+        int index = 0;
+        for (int i = 1; i < lastProbs.length; i++) {
+            Double lastProb = lastProbs[i];
+            if (highest < lastProb){
+                highest = lastProb;
+                index = i;
+            }
+        }
+
+        int[] res = new int[emissionSequence.length];
+        res[emissionSequence.length-1] = index;
+
+        for (int i = emissionSequence.length-1; i > 0 ; i--) {
+            int argMax = argMaxStore[i][index];
+            res[i-1] = argMax;
+            index = argMax;
+        }
+
+        return res;
     }
 }
