@@ -8,6 +8,7 @@ public class Parser {
 
     public Parser(String filePath) throws FileNotFoundException {
         // if file is not specified use system-in.
+
         if (filePath == null || filePath.isEmpty()) {
             br = new BufferedReader(new InputStreamReader(System.in));
         } else {
@@ -15,7 +16,7 @@ public class Parser {
         }
     }
 
-    public Matrix<Double> parseMatrix() throws IOException {
+    public double[][] parseMatrix() throws IOException {
         String line = br.readLine();
         String[] s = line.split(" ");
         if (s.length < 3) {
@@ -25,15 +26,15 @@ public class Parser {
         int rows = Integer.parseInt(s[0]);
         int cols = Integer.parseInt(s[1]);
 
-        Double[][] res = new Double[rows][cols];
+        double[][] ans = new double[rows][cols];
 
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 int index = 2 + i * cols + j;
-                res[i][j] = Double.parseDouble(s[index]);
+                ans[i][j] = Double.parseDouble(s[index]);
             }
         }
-        return new Matrix<>(res);
+        return ans;
     }
 
     public int[] parseArray() throws IOException {
@@ -47,9 +48,5 @@ public class Parser {
         return res;
     }
 
-
-    public void Done() throws IOException {
-        br.close();
-    }
 
 }

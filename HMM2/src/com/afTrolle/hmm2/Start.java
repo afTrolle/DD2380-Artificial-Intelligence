@@ -7,26 +7,14 @@ import java.io.IOException;
 public class Start {
 
     public static void main(String[] args) throws IOException {
-
         Parser parser = new Parser("HMM2/res/input.in");
 
-        Matrix<Double> aMatrix = parser.parseMatrix();
-        Matrix<Double> bMatrix = parser.parseMatrix();
-        Matrix<Double> piMatrix = parser.parseMatrix();
+        double[][] aMatrix = parser.parseMatrix();
+        double[][] bMatrix = parser.parseMatrix();
+        double[][] piMatrix = parser.parseMatrix();
+        int[] sequenceOfObservations = parser.parseArray();
+        HM hmm = new HM(aMatrix, bMatrix, piMatrix);
 
-        HMM hmm = new HMM(aMatrix, bMatrix, piMatrix);
-
-        //Observations seen in sequence
-        int[] emissionSequence = parser.parseArray();
-
-        //double res = hmm.backward(emissionSequence);
-        int[] res = hmm.viterbiMagnialized(emissionSequence);
-
-        for (int re : res) {
-            System.out.print(re + " ");
-        }
-
-
-        //  System.out.println(res);
+        hmm.hmm2(sequenceOfObservations);
     }
 }

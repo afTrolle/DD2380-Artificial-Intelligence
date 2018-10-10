@@ -1,9 +1,6 @@
 package com.afTrolle.hmm0;
 
-import com.afTrolle.common.HMM;
-import com.afTrolle.common.Matrix;
-import com.afTrolle.common.Parser;
-import com.afTrolle.common.Printer;
+import com.afTrolle.common.*;
 
 import java.io.IOException;
 
@@ -13,14 +10,11 @@ public class Start {
 
         try {
             Parser parser = new Parser("HMM0/res/input.in");
-            Matrix<Double> aMatrix = parser.parseMatrix();
-            Matrix<Double> bMatrix = parser.parseMatrix();
-            Matrix<Double> piMatrix = parser.parseMatrix();
-            HMM hmm = new HMM(aMatrix,bMatrix,piMatrix);
-
-            Double[] observationEmission = hmm.getFirstObservationProbability();
-
-            Printer.printArray(observationEmission);
+            double[][] aMatrix = parser.parseMatrix();
+            double[][] bMatrix = parser.parseMatrix();
+            double[][] piMatrix = parser.parseMatrix();
+            HM hmm = new HM(aMatrix, bMatrix, piMatrix);
+            hmm.hmm0();
         } catch (IOException e) {
             e.printStackTrace();
         }

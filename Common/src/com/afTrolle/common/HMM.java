@@ -13,7 +13,7 @@ public class HMM {
     Matrix<Double> piMatrix;
 
     //N ,number of States
-    final int numStates;
+    public final int numStates;
     //M ,number of Observation symbols that can be seen.
     final int numObservations;
 
@@ -356,6 +356,7 @@ public class HMM {
         int[][] argMaxStore = new int[emissionSequence.length][numStates];
         double[][] maxStore = new double[emissionSequence.length][numStates];
 
+        //not saving correct path.
         for (int i = 0; i < emissionSequence.length; i++) {
             double max = 0;
             int argMax = -1;
@@ -371,26 +372,65 @@ public class HMM {
         }
 
         //backtracking
-        double[] lastProbs = maxStore[emissionSequence.length-1];
-        Double highest = lastProbs[0] ;
+        double[] lastProbs = maxStore[emissionSequence.length - 1];
+        Double highest = lastProbs[0];
         int index = 0;
         for (int i = 1; i < lastProbs.length; i++) {
             Double lastProb = lastProbs[i];
-            if (highest < lastProb){
+            if (highest < lastProb) {
                 highest = lastProb;
                 index = i;
             }
         }
 
         int[] res = new int[emissionSequence.length];
-        res[emissionSequence.length-1] = index;
+        res[emissionSequence.length - 1] = index;
 
-        for (int i = emissionSequence.length-1; i > 0 ; i--) {
+        for (int i = emissionSequence.length - 1; i > 0; i--) {
             int argMax = argMaxStore[i][index];
-            res[i-1] = argMax;
+            res[i - 1] = argMax;
             index = argMax;
         }
 
         return res;
+    }
+
+
+    private double[][] ansTemp;
+
+    public double betaPassStart(int[] observations, int i) {
+        ansTemp = new double[observations.length][numStates];
+        for (int j = 0; j < observations.length; j++) {
+            for (int k = 0; k < numStates; k++) {
+                ansTemp[j][k] = -1;
+            }
+        }
+        return betaPass(0, observations, i);
+    }
+
+    public double betaPassMarganilzed(int[] observations) {
+        double sum = 0;
+        for (int i = 0; i < numStates; i++) {
+            sum += betaPassStart(observations, i);
+        }
+        return sum;
+    }
+
+    private double betaPass(int t, int[] observations, int i) {
+        if (t == observations.length - 1 || ansTemp[t][i] != -1) {
+            return 1D;
+        }
+
+        double sum = 0;
+
+        for (int j = 0; j < numStates; j++) {
+            double v = betaPass(t + 1, observations, j);
+            Double b = bMatrix.get(j, observations[t + 1]);
+            Double a = aMatrix.get(i, j);
+            sum += v * b * a;
+        }
+
+        ansTemp[t][i] = sum;
+        return sum;
     }
 }
