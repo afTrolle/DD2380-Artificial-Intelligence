@@ -8,13 +8,12 @@ import java.io.IOException;
 public class Start {
 
     public static void main(String[] args) throws IOException {
-        Parser parser = new Parser("HMM1/res/input2.in");
+        Parser parser = new Parser(null);
         double[][] aMatrix = parser.parseMatrix();
         double[][] bMatrix = parser.parseMatrix();
         double[][] piMatrix = parser.parseMatrix();
         int[] sequenceOfObservations = parser.parseArray();
         HM hmm = new HM(aMatrix, bMatrix, piMatrix);
         hmm.hmm1(sequenceOfObservations);
-        hmm.hmm3(sequenceOfObservations);
     }
 }

@@ -58,23 +58,39 @@ public class HM {
 
     /*    Alpha functions      */
 
-    private double alphaOne(int state, int observation) {
-        return (bMatrix[state][observation] * this.piMatrix[0][state]);
+    private double[][] alphaOneNorm(int[] observation) {
+        double[][] ret = new double[observation.length][numStates];
+        double[] bCol = getBCol(observation[0]);
+        double[] piMatrix = this.piMatrix[0];
+        ret[0] = multiply(bCol, piMatrix);
+        double v = sumArray(ret[0]);
+        ret[0] = divide(ret[0], v);
+        return ret;
     }
 
-    //incorrect in some way returns to big values
-    public double alphaRecursive(int[] observations, int i, int t) {
-        double b = this.bMatrix[i][observations[t]];
-        double sum = 0;
-        if (t == 0) {
-            return alphaOne(i, observations[0]);
-        }
-        for (int j = 0; j < numStates; j++) {
-            sum += alphaRecursive(observations, j, t - 1);
+
+    //correct without normalization
+    private double[][] alphaNorm(int[] observations) {
+        double[][] ans = alphaOneNorm(observations);
+
+        for (int i = 1; i < observations.length; i++) {
+            double[] temp = new double[numStates];
+            for (int j = 0; j < numStates; j++) {
+                double[] aCol = getACol(j);
+                temp[j] = multiplySum(ans[i - 1], aCol);
+            }
+            double[] bCol = getBCol(observations[i]);
+
+            ans[i] = multiply(temp, bCol);
+
+            //normalization
+            double v = sumArray(ans[i]);
+            ans[i] = divide(ans[i], v);
         }
 
-        return b * sum;
+        return ans;
     }
+
 
     private double[][] alphaOneMarginalized(int[] observation) {
         double[][] ret = new double[observation.length][numStates];
@@ -84,6 +100,8 @@ public class HM {
         return ret;
     }
 
+
+    //correct without normalization
     private double[][] alphaMarginalizedIterative(int[] observations) {
         double[][] ans = alphaOneMarginalized(observations);
 
@@ -96,8 +114,10 @@ public class HM {
             double[] bCol = getBCol(observations[i]);
 
             ans[i] = multiply(temp, bCol);
-            double v = sumArray(ans[i]);
-            ans[i] = divide(ans[i], v);
+
+            //normalization
+            // double v = sumArray(ans[i]);
+            // ans[i] = divide(ans[i], v);
         }
 
         return ans;
@@ -135,6 +155,36 @@ public class HM {
         return sum;
     }
 
+    public double[][] betaNormalized(int[] observations) {
+
+        //init step TIME T
+        double[][] res = new double[observations.length + 1][numStates];
+        for (int i = 0; i < numStates; i++) {
+            res[observations.length][i] = 1D;
+        }
+
+        //go in reverse, not completely sure if needed...
+        //calcutlate one state
+
+        for (int t = observations.length - 1; t >= 0; t--) {
+            int observation = observations[t];
+            double[] temp = new double[numStates];
+            //for each i
+            for (int i = 0; i < numStates; i++) {
+                double sum = 0;
+                for (int j = 0; j < numStates; j++) {
+                    sum = sum + res[t + 1][j] * aMatrix[i][j] * bMatrix[j][observation];
+                }
+                temp[i] = sum;
+            }
+            res[t] = temp;
+
+            //  double v = sumArray(res[t]);
+            //  res[t] = divide(res[t], v);
+        }
+
+        return res;
+    }
 
     public double[][] betaMarginalized(int[] observations) {
 
@@ -160,8 +210,8 @@ public class HM {
             }
             res[t] = temp;
 
-            double v = sumArray(res[t]);
-            res[t] = divide(res[t], v);
+            //  double v = sumArray(res[t]);
+            //  res[t] = divide(res[t], v);
         }
 
         return res;
@@ -290,12 +340,27 @@ public class HM {
         return res;
     }
 
+    private void printArray(String str, double[] arr) {
+        for (int i = 0; i < arr.length; i++) {
+            System.out.println(str + " " + i + ": " + arr[i]);
+        }
+    }
 
     public void diGamma(int[] observations) {
         boolean run = true;
         while (run) {
+            run = false;
+            // should be correct
             double[][] alphaT = alphaMarginalizedIterative(observations);
+
+            printArray("alpha", alphaT[observations.length - 1]);
+
+            // should be correct? maybe should be in reverse order...
             double[][] betaT = betaMarginalized(observations);
+
+            printArray("beta", betaT[0]);
+
+            // ? maybe sho
             double[][][] diGamma = new double[observations.length][numStates][numStates];
             double[][] gammas = new double[observations.length][numStates];
             double alphaTSum = sumArray(alphaT[observations.length - 1]);
@@ -314,7 +379,7 @@ public class HM {
                     gammas[t][i] = sum;
                 }
 
-              //  divide(gammas[t], sumArray(gammas[t]));
+                //  divide(gammas[t], sumArray(gammas[t]));
             }
 
             double aMatrixTemp[][] = new double[numStates][numStates];
@@ -355,16 +420,16 @@ public class HM {
             }
 
 
-
-       //    piMatrix[0] =  divide(gammas[0], sumArray(gammas[0]));
-            piMatrix[0] =  gammas[0];
-           setbMatrix(bMatrixTemp);
+            //    piMatrix[0] =  divide(gammas[0], sumArray(gammas[0]));
+            printMatrix("a matrix", aMatrixTemp);
+            piMatrix[0] = gammas[0];
+            setbMatrix(bMatrixTemp);
             setaMatrix(aMatrixTemp);
-             printMatrix("a matrix", aMatrixTemp);
+            //   printMatrix("a matrix", aMatrixTemp);
 
             counter++;
             if (counter % 1000 == 0) {
-              //  printMatrix("a matrix", aMatrixTemp);
+                //  printMatrix("a matrix", aMatrixTemp);
             }
         }
     }
@@ -403,7 +468,6 @@ public class HM {
         double[][] doubles = alphaMarginalizedIterative(observations);
         double v = sumArray(doubles[observations.length - 1]);
         System.out.println(v);
-
     }
 
     //calculate the most likely sequence of (hidden) states that the system moves through given an emission sequence
@@ -414,18 +478,6 @@ public class HM {
     //Given is starting guess of a HMM and a sequence of emissions.
     // you should train the HMM to maximize the probability of observing the given sequence of emissions.
     public void hmm3(int[] sequenceOfObservations) {
-
-        double[][] doubles = alphaMarginalizedIterative(sequenceOfObservations);
-
-        for (double v : doubles[sequenceOfObservations.length - 1]) {
-            System.out.println("alpha " + v);
-        }
-
-
-        for (double v : betaMarginalized(sequenceOfObservations)[0]) {
-            System.out.println("betafast: " + v);
-        }
-
         diGamma(sequenceOfObservations);
     }
 
@@ -542,6 +594,160 @@ public class HM {
             System.out.print('\n');
         }
         System.out.print('\n');
+    }
+
+
+    private double[] multiply(double[] doubles, double v) {
+        for (int i = 0; i < doubles.length; i++) {
+            doubles[i] = doubles[i] * v;
+        }
+        return doubles;
+    }
+
+
+    private final int maxEstimations = 1000000;
+    double prevLogProb = Double.MAX_VALUE;
+
+    public void estitamteModel(int[] observations) {
+
+        counter = 0;
+        boolean run = true;
+        while (run) {
+
+
+            double[] constantsT = new double[observations.length];
+
+            //alpha first step T = 0
+            double[][] alphaT = new double[observations.length][numStates];
+            alphaT[0] = multiply(getBCol(observations[0]), this.piMatrix[0]);
+            constantsT[0] = 1 / sumArray(alphaT[0]);
+            alphaT[0] = multiply(alphaT[0], constantsT[0]);
+
+            //alpha  t > 0
+            for (int t = 1; t < observations.length; t++) {
+                constantsT[t] = 0;
+                for (int i = 0; i < numStates; i++) {
+                    alphaT[t][i] = 0;
+                    for (int j = 0; j < numStates; j++) {
+                        alphaT[t][i] += alphaT[t - 1][j] * aMatrix[j][i];
+
+                    }
+                    alphaT[t][i] = alphaT[t][i] * bMatrix[i][observations[t]];
+                    constantsT[t] += constantsT[t] + alphaT[t][i];
+                }
+
+                //calc scale
+                constantsT[t] = 1 / constantsT[t];
+                //scale Alpha
+                alphaT[t] = multiply(alphaT[t], constantsT[t]);
+            }
+
+
+            // beta
+            double[][] betaT = new double[observations.length][numStates];
+            // beta t = T-1, aka first step.
+            for (int i = 0; i < numStates; i++) {
+                betaT[observations.length - 1][i] = constantsT[observations.length - 1];
+            }
+
+            //Beta when t < T-1
+            //might be to zero indicating that we skip zero
+            for (int t = observations.length - 2; t >= 0; t--) {
+
+                for (int i = 0; i < numStates; i++) {
+                    betaT[t][i] = 0;
+                    for (int j = 0; j < numStates; j++) {
+                        betaT[t][i] = betaT[t][i] + aMatrix[i][j] * bMatrix[j][observations[t + 1]] * betaT[t + 1][j];
+                    }
+
+                    //scale, using scaling from alpha. same nomalization()
+                    betaT[t][i] = betaT[t][i] * constantsT[t];
+                }
+            }
+
+
+            double[][][] diGamma = new double[observations.length][numStates][numStates];
+            double[][] gamma = new double[observations.length][numStates];
+            //Di gamma and gama calc
+
+            for (int t = 0; t < observations.length - 1; t++) {
+
+                //calc denorm
+                double denorm = 0;
+                for (int i = 0; i < numStates; i++) {
+                    for (int j = 0; j < numStates; j++) {
+                        denorm += alphaT[t][i] * aMatrix[i][j] * bMatrix[j][observations[t + 1]] * betaT[t + 1][j];
+                    }
+                }
+
+                for (int i = 0; i < numStates; i++) {
+                    gamma[t][i] = 0;
+                    for (int j = 0; j < numStates; j++) {
+                        diGamma[t][i][j] = (alphaT[t][i] * aMatrix[i][j] * bMatrix[j][observations[t + 1]] * betaT[t + 1][j]) / denorm;
+                        gamma[t][i] += diGamma[t][i][j];
+                    }
+                }
+            }
+
+            //de norm edge case  γT −1(i)
+            double denorm = sumArray(alphaT[observations.length - 1]);
+            for (int i = 0; i < numStates; i++) {
+                gamma[observations.length - 1][i] = alphaT[observations.length - 1][i] / denorm;
+            }
+
+
+            // re estitamte
+            //re estimate pi
+            piMatrix[0] = gamma[0];
+
+
+            //re estimate A
+            for (int i = 0; i < numStates; i++) {
+                for (int j = 0; j < numStates; j++) {
+                    double num = 0;
+                    double denom = 0;
+                    for (int t = 0; t < observations.length - 1; t++) {
+                        num += diGamma[t][i][j];
+                        denom += gamma[t][i];
+                    }
+                    aMatrix[i][j] = num / denom;
+                }
+            }
+
+            for (int i = 0; i < numStates; i++) {
+                for (int j = 0; j < numUniqueObservations; j++) {
+                    double num = 0;
+                    double denom = 0;
+                    for (int t = 0; t < observations.length - 1; t++) {
+                        if (observations[t] == j) {
+                            num += gamma[t][i];
+                        }
+                        denom += gamma[t][i];
+                    }
+                    bMatrix[i][j] = num / denom;
+                }
+            }
+
+            // compute  log[P(O | λ)]
+            double logProb = 0;
+            for (int t = 0; t < observations.length; t++) {
+                logProb += Math.log(constantsT[t]);
+            }
+
+            // update completed
+            counter++;
+
+
+            if (counter < maxEstimations && logProb < prevLogProb) {
+                prevLogProb = logProb;
+            } else {
+                run = false;
+            }
+        }
+
+
+        Printer.printMatrix(aMatrix);
+        Printer.printMatrix(bMatrix);
     }
 
 }

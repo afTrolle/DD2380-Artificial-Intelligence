@@ -25,7 +25,7 @@ Do not output the estimated initial state probability distribution.
          */
 
         try {
-            Parser parser = new Parser("HMM3/res/input.in");
+            Parser parser = new Parser(null);
 
             double[][] aMatrix = parser.parseMatrix();
             double[][] bMatrix = parser.parseMatrix();
@@ -33,7 +33,7 @@ Do not output the estimated initial state probability distribution.
             int[] sequenceOfObservations = parser.parseArray();
             HM hmm = new HM(aMatrix, bMatrix, piMatrix);
 
-            hmm.hmm3(sequenceOfObservations);
+            hmm.estitamteModel(sequenceOfObservations);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
